@@ -1,0 +1,133 @@
+.block-tweet-container {
+    width: 100%;
+    
+}
+.block-tweet-tweet {
+    
+   width: calc(33.3% - 20px);
+   height:250px;
+}
+.block-tweet-twitter-icon {
+    color: #1da1f2;
+}
+.block-tweet-tweet-link, .block-tweet-twitter-icon {
+    display: inline-block;
+}
+
+
+.block-tweet-twitter-icon{
+		font-size:1.2em;
+	}
+.block-tweet-tweet-date {
+    font-size: 80%;
+    color: #aaa;
+    text-transform: uppercase;
+}
+.block-tweet-tweet {
+    float: left;
+    border-top:4px solid #1da1f2;
+    margin: 12px 10px;
+    text-align: center;
+	box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+	padding:10px;
+	font-size:1em;
+}
+.block-tweet-tweet-text {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 7;
+    -webkit-box-orient: vertical;
+}
+
+.block-tweet-module .content {
+    width: 100%;
+	margin:0 auto;
+}
+.block-tweet-tweet-head, .block-tweet-tweet-date {
+    margin-bottom: 10px;
+}
+.block-tweet-tweet-head{
+	margin-top:10px;
+}
+@media(min-width: 1120px) {
+	.block-tweet-container {
+		text-align:center;
+	}
+.block-tweet-tweet {
+    display:inline-block;
+	float:none;
+	vertical-align:top;
+    border-top:4px solid #1da1f2;
+    margin: 12px 10px;
+    text-align: center;
+	box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+	padding:10px;
+	font-size:1em;
+	width: calc(33.3% - 20px);
+	max-width:30em;
+   height:250px;
+}
+
+}
+
+@media(max-width: 992px) {
+.block-tweet-tweet {
+    float: left;
+    border-top:4px solid #1da1f2;
+    margin: 12px 8px;
+    text-align: center;
+	box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+	padding:10px;
+	font-size:1em;
+	
+}
+}
+
+@media(max-width:742px){
+	
+	.block-tweet-tweet{
+	font-size:1.1em;
+}
+	.block-tweet-twitter-icon{
+		font-size:1.2em;
+	}
+.block-tweet-tweet {
+    
+   width: 45%;
+   height: 270px;
+  margin:12px 2% 12px 2%;
+}
+@-moz-document url-prefix() {
+ .block-tweet-tweet-text {
+    overflow: hidden;
+    position: relative;
+	height: 175px;
+  }
+}
+
+@media(max-width: 522px) {
+	.block-tweet-tweet {
+    
+   width:100%;
+  margin:12px auto;
+}
+.block-tweet-twitter-icon{
+		font-size:1.2em;
+	}
+.block-tweet-tweet{
+	font-size:1.2em;
+}
+
+.block-tweet-module .content {
+    width: 100%;
+	max-width:26em;
+	margin:0 auto;
+
+}
+@-moz-document url-prefix() {
+ .block-tweet-tweet-text {
+    overflow: hidden;
+    position: relative;
+	height: 170px;
+  }
+}

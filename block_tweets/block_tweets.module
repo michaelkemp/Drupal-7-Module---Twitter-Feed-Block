@@ -1,0 +1,237 @@
+<?php
+
+// TWITTER OAUTH LIBRARY
+$modulePath = drupal_get_path('module', 'block_tweets');
+$fullModulePath = DRUPAL_ROOT . "/". $modulePath;
+require $fullModulePath .  "/twitteroauth/autoload.php";
+use Abraham\TwitterOAuth\TwitterOAuth;
+    
+/**
+ * Implements hook_menu().
+ */
+function block_tweets_menu() {
+  $items = array();
+  $items['admin/config/content/block_tweets'] = array(
+    'title' => 'Block Tweets Config',
+    'description' => 'Configuration for Block Tweets module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('block_tweets_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+ 
+
+function block_tweets_form($form, &$form_state) {
+  $form['block_tweets_CONSUMER_KEY'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Consumer Key (API Key)'),
+    '#default_value' => variable_get('block_tweets_CONSUMER_KEY', ''),
+    '#description' => t('See https://apps.twitter.com to create a Consumer Key (API Key)'),
+    '#required' => TRUE,
+  );
+  $form['block_tweets_CONSUMER_SECRET'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Consumer Secret (API Secret)'),
+    '#default_value' => variable_get('block_tweets_CONSUMER_SECRET', ''),
+    '#description' => t('See https://apps.twitter.com to create a Consumer Secret (API Secret)'),
+    '#required' => TRUE,
+  );
+  
+  $form['block_tweets_ACCESS_TOKEN'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Access Token'),
+    '#default_value' => variable_get('block_tweets_ACCESS_TOKEN', ''),
+    '#description' => t('See https://apps.twitter.com to create an Access Token'),
+    '#required' => TRUE,
+  );
+
+  $form['block_tweets_ACCESS_TOKEN_SECRET'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Access Token Secret'),
+    '#default_value' => variable_get('block_tweets_ACCESS_TOKEN_SECRET', ''),
+    '#description' => t('See https://apps.twitter.com to create an Access Token Secret'),
+    '#required' => TRUE,
+  );
+  
+  $form['block_tweets_TWEET_COUNT'] = array(
+    '#type' => 'select', 
+    '#title' => t('Number of Tweets'),
+    '#default_value' => variable_get('block_tweets_TWEET_COUNT', '1'),
+    '#options' => array(
+        '1' => t('1'),
+        '2' => t('2'),
+        '3' => t('3'),
+        '4' => t('4'),
+        '5' => t('5'),
+    ),    
+    '#description' => t('Total Number of Tweets to display from each Account Screen Name'),
+    '#required' => TRUE,
+  );
+  
+  $form['block_tweets_SCREEN_NAME'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Account Screen Name'),
+    '#default_value' => variable_get('block_tweets_SCREEN_NAME', ''),
+    '#description' => t('The Screen Name(s) of the Twitter feed to be displayed - comma separated (eg NatGeo,TEDTalks).'),
+    '#required' => TRUE,
+  );
+  
+  return system_settings_form($form);
+}
+ 
+ 
+ 
+/**
+ * Implements hook_block_info().
+ */
+function block_tweets_block_info(){
+    $blocks['twitterBlock'] = array(
+        'info' => t("Twitter Block"),
+        'cache' => DRUPAL_CACHE_PER_PAGE,
+    );
+    return $blocks;
+}
+
+/**
+ *  Implements hook_block_view().
+ */
+function block_tweets_block_view($block_name = ""){
+    switch ($block_name) {
+        case 'twitterBlock':
+            $block['subject'] = t("Twitter Block");
+            $block['content'] = btTwitterBlock();
+            return $block;
+    }
+}
+
+
+function btTwitterBlock() {
+    
+    $now = time();
+    $btTwitterTS = variable_get("btTwitterTS", 0);
+    $btTwitterJSON = variable_get("btTwitterJSON", "{}");
+    
+    if (($now - $btTwitterTS) > 60 ) {
+        
+        $CONSUMER_KEY = variable_get('block_tweets_CONSUMER_KEY', '');
+        $CONSUMER_SECRET = variable_get('block_tweets_CONSUMER_SECRET', '');
+        $ACCESS_TOKEN = variable_get('block_tweets_ACCESS_TOKEN', '');
+        $ACCESS_TOKEN_SECRET = variable_get('block_tweets_ACCESS_TOKEN_SECRET', '');
+        $SCREEN_NAME = variable_get('block_tweets_SCREEN_NAME', '');
+        $TWEET_COUNT = intval(variable_get('block_tweets_TWEET_COUNT', '1'));
+        
+        if ( trim($CONSUMER_KEY.$CONSUMER_SECRET.$ACCESS_TOKEN.$ACCESS_TOKEN_SECRET.$SCREEN_NAME) != "") {
+            $connection = new TwitterOAuth($CONSUMER_KEY, $CONSUMER_SECRET, $ACCESS_TOKEN, $ACCESS_TOKEN_SECRET);
+            
+            $sNames = explode(",",$SCREEN_NAME);
+            $tweetArray = array();
+            foreach($sNames as $sname) {
+                if (trim($sname) != "") {
+                    $allTweets = $connection->get('statuses/user_timeline', array('screen_name' => $sname));
+                    $cnt = 0;
+                    foreach($allTweets as $aTweet) {
+                        $tweetArray[] = $aTweet;
+                        $cnt++;
+                        if ($cnt >= $TWEET_COUNT) break;
+                    }
+                }
+            }
+            
+            $btTwitterJSON = json_encode($tweetArray);
+            variable_set("btTwitterTS", $now);
+            variable_set("btTwitterJSON", $btTwitterJSON);
+        } else {
+            $btTwitterJSON = "{}";
+            variable_set("btTwitterTS", 0);
+            variable_set("btTwitterJSON", "{}");
+        }
+    }
+    
+    $tweets = json_decode($btTwitterJSON,TRUE);
+    $html = "";
+    foreach($tweets as $twit) {
+            $dateStr = date('g:i A - j M Y');
+            $imagStr = "";
+            $linkStr = "";
+            $textStr = "";
+            
+            $displyName = isset($twit["user"]["name"]) ? $twit["user"]["name"] : "";
+            $screenName = isset($twit["user"]["screen_name"]) ? $twit["user"]["screen_name"] : "";
+            
+            if (isset($twit["retweeted_status"]["text"])) {
+                $timestamp = strtotime($twit["retweeted_status"]["created_at"]);
+                $dateStr = date('M j, Y', $timestamp);
+                $text = "RT @" . $twit["retweeted_status"]["user"]["screen_name"] . " -- " . $twit["retweeted_status"]["text"];
+                $textStr =  btHTMLAllEntities(btTwitterIt(btLinkIt($text)));
+            } elseif (isset($twit["text"])) {
+                $timestamp = strtotime($twit["created_at"]);
+                $dateStr =  date('M j, Y', $timestamp);
+                $text = $twit["text"];
+                $textStr =  btHTMLAllEntities(btTwitterIt(btLinkIt($text)));
+            }
+
+            if (isset($twit["entities"]["media"])) {
+                foreach($twit["entities"]["media"] as $img) {
+                    if ($img["type"] == "photo") {
+                        $linkStr = $img["url"];
+                        $imagStr = $img["media_url_https"];
+                    }
+                }
+            }
+
+            $html.= "<div class='block-tweet-tweet'>";
+            $html.= "   <div class='block-tweet-tweet-head'>";
+            $html.= "       <div class='block-tweet-twitter-icon'><i class='fa fa-twitter' aria-hidden='true'></i></div>";
+            $html.= "       <div class='block-tweet-tweet-link'><a href='http://twitter.com/${screenName}' aria-label='Follow @${screenName} on Twitter' target='_blank'>@${screenName}</a></div>";
+            $html.= "   </div>";
+            $html.= "   <div class='block-tweet-tweet-body'>";
+            $html.= "       <div class='block-tweet-tweet-date'>${dateStr}</div>";
+            $html.= "       <div class='block-tweet-tweet-text'>${textStr}</div>";
+            $html.= "   </div>";
+            $html.= "</div>";
+        
+    }
+     
+    $output = array (
+		'#type' => 'markup',
+		'#prefix' => "<div class='block-tweet-module'>",
+		'#markup' => "<div class='block-tweet-container clearfix'>" . $html . "</div>",
+		'#suffix' => "</div>",
+		);
+	return $output; 
+    
+}
+
+
+// ======================================= TWITTER HELPER FUNCTIONS ========================================
+function btLinkIt($text) {
+    $text = preg_replace('/([a-z]+\:\/\/[a-z0-9\-\.]+\.[a-z]+(:[a-z0-9]*)?\/?([a-z0-9\-\._\:\?\,\'\/\\\+&%\$#\=~])*[^\.\,\)\(\s])/i', '<a href="\1" target="_blank">\1</a>', $text);
+    return $text;
+}
+function btTwitterIt($text) {
+    $text = preg_replace("/@(\w+)/", '<a href="https://www.twitter.com/$1" target="_blank">@$1</a>', $text);
+    $text = preg_replace("/\#(\w+)/", '<a href="https://twitter.com/hashtag/$1?src=hashtag" target="_blank">#$1</a>',$text);
+    return $text;
+}
+function btHTMLAllEntities($str){
+    $res = '';
+    $strlen = strlen($str);
+    for($i=0; $i<$strlen; $i++){
+        $byte = ord($str[$i]);
+        if($byte < 128) // 1-byte char
+            $res .= $str[$i];
+        elseif($byte < 192); // invalid utf8
+        elseif($byte < 224) // 2-byte char
+            $res .= '&#'.((63&$byte)*64 + (63&ord($str[++$i]))).';';
+        elseif($byte < 240) // 3-byte char
+            $res .= '&#'.((15&$byte)*4096 + (63&ord($str[++$i]))*64 + (63&ord($str[++$i]))).';';
+        elseif($byte < 248) // 4-byte char
+            $res .= '&#'.((15&$byte)*262144 + (63&ord($str[++$i]))*4096 + (63&ord($str[++$i]))*64 + (63&ord($str[++$i]))).';';
+    }
+    return $res;
+}
+// ======================================= TWITTER HELPER FUNCTIONS ========================================
+
+

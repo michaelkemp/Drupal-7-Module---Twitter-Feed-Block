@@ -1,0 +1,9 @@
+name = Twitter Block Module
+description = Display Tweets in a Block
+core = 7.x
+version = 1.0
+
+configure = admin/config/content/block_tweets
+
+files[] = block_tweets.module
+stylesheets[all][] = css/block_tweets.css
