@@ -31,6 +31,7 @@
 	box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
 	padding:10px;
 	font-size:1em;
+	 background-color: white;
 }
 .block-tweet-tweet-text {
     overflow: hidden;
@@ -66,6 +67,7 @@
 	width: calc(33.3% - 20px);
 	max-width:30em;
    height:250px;
+       background-color: white;
 }
 
 }
@@ -79,6 +81,7 @@
 	box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
 	padding:10px;
 	font-size:1em;
+	 background-color: white;
 	
 }
 }
@@ -96,6 +99,7 @@
    width: 45%;
    height: 270px;
   margin:12px 2% 12px 2%;
+   background-color: white;
 }
 @-moz-document url-prefix() {
  .block-tweet-tweet-text {
@@ -107,7 +111,7 @@
 
 @media(max-width: 522px) {
 	.block-tweet-tweet {
-    
+     background-color: white;
    width:100%;
   margin:12px auto;
 }
@@ -116,6 +120,7 @@
 	}
 .block-tweet-tweet{
 	font-size:1.2em;
+	 background-color: white;
 }
 
 .block-tweet-module .content {
@@ -129,5 +134,6 @@
     overflow: hidden;
     position: relative;
 	height: 170px;
+	 background-color: white;
   }
 }
