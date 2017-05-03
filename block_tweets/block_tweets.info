@@ -1,7 +1,7 @@
 name = Twitter Block Module
 description = Display Tweets in a Block
 core = 7.x
-version = 1.1
+version = 1.4
 
 configure = admin/config/content/block_tweets
 

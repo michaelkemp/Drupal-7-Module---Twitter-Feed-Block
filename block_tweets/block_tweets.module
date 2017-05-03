@@ -28,14 +28,14 @@ function block_tweets_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Consumer Key (API Key)'),
     '#default_value' => variable_get('block_tweets_CONSUMER_KEY', ''),
-    '#description' => t('See https://apps.twitter.com to create a Consumer Key (API Key)'),
+    '#description' => t('See https://apps.twitter.com to create a Consumer Key (API Key).'),
     '#required' => TRUE,
   );
   $form['block_tweets_CONSUMER_SECRET'] = array(
     '#type' => 'textfield',
     '#title' => t('Consumer Secret (API Secret)'),
     '#default_value' => variable_get('block_tweets_CONSUMER_SECRET', ''),
-    '#description' => t('See https://apps.twitter.com to create a Consumer Secret (API Secret)'),
+    '#description' => t('See https://apps.twitter.com to create a Consumer Secret (API Secret).'),
     '#required' => TRUE,
   );
   
@@ -43,7 +43,7 @@ function block_tweets_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Access Token'),
     '#default_value' => variable_get('block_tweets_ACCESS_TOKEN', ''),
-    '#description' => t('See https://apps.twitter.com to create an Access Token'),
+    '#description' => t('See https://apps.twitter.com to create an Access Token.'),
     '#required' => TRUE,
   );
 
@@ -51,7 +51,7 @@ function block_tweets_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Access Token Secret'),
     '#default_value' => variable_get('block_tweets_ACCESS_TOKEN_SECRET', ''),
-    '#description' => t('See https://apps.twitter.com to create an Access Token Secret'),
+    '#description' => t('See https://apps.twitter.com to create an Access Token Secret.'),
     '#required' => TRUE,
   );
   
@@ -66,7 +66,7 @@ function block_tweets_form($form, &$form_state) {
         '4' => t('4'),
         '5' => t('5'),
     ),    
-    '#description' => t('Total Number of Tweets to display from each Account Screen Name'),
+    '#description' => t('Total Number of Tweets to display from each Account Screen Name.'),
     '#required' => TRUE,
   );
   
@@ -77,6 +77,21 @@ function block_tweets_form($form, &$form_state) {
     '#description' => t('The Screen Name(s) of the Twitter feed to be displayed - comma separated (eg NatGeo,TEDTalks).'),
     '#required' => TRUE,
   );
+  
+  $form['block_tweets_WAIT_TIME'] = array(
+    '#type' => 'select', 
+    '#title' => t('Check Frequency'),
+    '#default_value' => variable_get('block_tweets_WAIT_TIME', '60'),
+    '#options' => array(
+        '60' => t('One Minute'),
+        '300' => t('Five Minutes'),
+        '600' => t('Ten Minutes'),
+        '3600' => t('One Hour'),
+    ),    
+    '#description' => t('I should check for new tweets every: '),
+    '#required' => TRUE,
+  );
+  
   
   return system_settings_form($form);
 }
@@ -112,8 +127,9 @@ function btTwitterBlock() {
     $now = time();
     $btTwitterTS = variable_get("btTwitterTS", 0);
     $btTwitterJSON = variable_get("btTwitterJSON", "{}");
+    $WAIT_TIME = intval(variable_get('block_tweets_WAIT_TIME', '60'));
     
-    if (($now - $btTwitterTS) > 60 ) {
+    if (($now - $btTwitterTS) > $WAIT_TIME ) {
         
         $CONSUMER_KEY = variable_get('block_tweets_CONSUMER_KEY', '');
         $CONSUMER_SECRET = variable_get('block_tweets_CONSUMER_SECRET', '');
