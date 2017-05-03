@@ -58,13 +58,11 @@ function block_tweets_form($form, &$form_state) {
   $form['block_tweets_TWEET_COUNT'] = array(
     '#type' => 'select', 
     '#title' => t('Number of Tweets'),
-    '#default_value' => variable_get('block_tweets_TWEET_COUNT', '1'),
+    '#default_value' => variable_get('block_tweets_TWEET_COUNT', '3'),
     '#options' => array(
-        '1' => t('1'),
-        '2' => t('2'),
         '3' => t('3'),
-        '4' => t('4'),
-        '5' => t('5'),
+        '6' => t('6'),
+        '9' => t('9'),
     ),    
     '#description' => t('Total Number of Tweets to display from each Account Screen Name.'),
     '#required' => TRUE,
@@ -74,7 +72,7 @@ function block_tweets_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Account Screen Name'),
     '#default_value' => variable_get('block_tweets_SCREEN_NAME', ''),
-    '#description' => t('The Screen Name(s) of the Twitter feed to be displayed - comma separated (eg NatGeo,TEDTalks).'),
+    '#description' => t('The Screen Name(s) of the Twitter feed(s) to be displayed - comma separated (eg NatGeo,TEDTalks).'),
     '#required' => TRUE,
   );
   
@@ -92,20 +90,37 @@ function block_tweets_form($form, &$form_state) {
     '#required' => TRUE,
   );
   
-  
+  $form['#submit'][] = 'block_tweets_form_submit';
   return system_settings_form($form);
 }
- 
+
+function block_tweets_form_submit($form, &$form_state) {
+    cache_clear_all();
+    drupal_set_message(t('Twitter information Saved.'));
+} 
  
  
 /**
  * Implements hook_block_info().
  */
 function block_tweets_block_info(){
-    $blocks['twitterBlock'] = array(
-        'info' => t("Twitter Block"),
-        'cache' => DRUPAL_CACHE_PER_PAGE,
-    );
+    $blocks = array();
+    
+    $SCREEN_NAME = variable_get('block_tweets_SCREEN_NAME', '');
+    $sNames = explode(",",$SCREEN_NAME);
+    $cnt = 0;
+    foreach($sNames as $sname) {    
+        $sname = strtolower(trim($sname));
+        if ($sname != "") {
+            ++$cnt;
+            $blocks["twitterBlock_${cnt}_${sname}"] = array(
+                'info' => t("Twitter Block ${cnt} ${sname}"),
+                'cache' => DRUPAL_CACHE_PER_PAGE,
+            );
+            
+        }
+    }
+    
     return $blocks;
 }
 
@@ -113,16 +128,28 @@ function block_tweets_block_info(){
  *  Implements hook_block_view().
  */
 function block_tweets_block_view($block_name = ""){
-    switch ($block_name) {
-        case 'twitterBlock':
-            $block['subject'] = t("Twitter Block");
-            $block['content'] = btTwitterBlock();
-            return $block;
+    $block = array();
+    
+    $SCREEN_NAME = variable_get('block_tweets_SCREEN_NAME', '');
+    $sNames = explode(",",$SCREEN_NAME);
+    $cnt = 0;
+    foreach($sNames as $sname) {    
+        $sname = strtolower(trim($sname));
+        if ($sname != "") {
+            ++$cnt;
+            $name = "twitterBlock_${cnt}_${sname}";
+            if ($block_name == $name) {
+                $block['subject'] = t("Twitter Block ${cnt} ${sname}");
+                $block['content'] = btTwitterBlock($sname);
+                return $block;
+            }
+        }
     }
+
 }
 
 
-function btTwitterBlock() {
+function btTwitterBlock($dispScreenName) {
     
     $now = time();
     $btTwitterTS = variable_get("btTwitterTS", 0);
@@ -135,16 +162,17 @@ function btTwitterBlock() {
         $CONSUMER_SECRET = variable_get('block_tweets_CONSUMER_SECRET', '');
         $ACCESS_TOKEN = variable_get('block_tweets_ACCESS_TOKEN', '');
         $ACCESS_TOKEN_SECRET = variable_get('block_tweets_ACCESS_TOKEN_SECRET', '');
-        $SCREEN_NAME = variable_get('block_tweets_SCREEN_NAME', '');
+        $SCREEN_NAME = trim(strtolower(variable_get('block_tweets_SCREEN_NAME', '')));
         $TWEET_COUNT = intval(variable_get('block_tweets_TWEET_COUNT', '1'));
         
         if ( trim($CONSUMER_KEY.$CONSUMER_SECRET.$ACCESS_TOKEN.$ACCESS_TOKEN_SECRET.$SCREEN_NAME) != "") {
             $connection = new TwitterOAuth($CONSUMER_KEY, $CONSUMER_SECRET, $ACCESS_TOKEN, $ACCESS_TOKEN_SECRET);
             
-            $sNames = explode(",",$SCREEN_NAME);
+            $sNames = array_unique(explode(",",$SCREEN_NAME));
             $tweetArray = array();
             foreach($sNames as $sname) {
-                if (trim($sname) != "") {
+                $sname = strtolower(trim($sname));
+                if ($sname != "") {
                     $allTweets = $connection->get('statuses/user_timeline', array('screen_name' => $sname));
                     $cnt = 0;
                     foreach($allTweets as $aTweet) {
@@ -176,37 +204,39 @@ function btTwitterBlock() {
             $displyName = isset($twit["user"]["name"]) ? $twit["user"]["name"] : "";
             $screenName = isset($twit["user"]["screen_name"]) ? $twit["user"]["screen_name"] : "";
             
-            if (isset($twit["retweeted_status"]["text"])) {
-                $timestamp = strtotime($twit["retweeted_status"]["created_at"]);
-                $dateStr = date('M j, Y', $timestamp);
-                $text = "RT @" . $twit["retweeted_status"]["user"]["screen_name"] . " -- " . $twit["retweeted_status"]["text"];
-                $textStr =  btHTMLAllEntities(btTwitterIt(btLinkIt($text)));
-            } elseif (isset($twit["text"])) {
-                $timestamp = strtotime($twit["created_at"]);
-                $dateStr =  date('M j, Y', $timestamp);
-                $text = $twit["text"];
-                $textStr =  btHTMLAllEntities(btTwitterIt(btLinkIt($text)));
-            }
+            if ($dispScreenName == strtolower(trim($screenName))) {
+                if (isset($twit["retweeted_status"]["text"])) {
+                    $timestamp = strtotime($twit["retweeted_status"]["created_at"]);
+                    $dateStr = date('M j, Y', $timestamp);
+                    $text = "RT @" . $twit["retweeted_status"]["user"]["screen_name"] . " -- " . $twit["retweeted_status"]["text"];
+                    $textStr =  btHTMLAllEntities(btTwitterIt(btLinkIt($text)));
+                } elseif (isset($twit["text"])) {
+                    $timestamp = strtotime($twit["created_at"]);
+                    $dateStr =  date('M j, Y', $timestamp);
+                    $text = $twit["text"];
+                    $textStr =  btHTMLAllEntities(btTwitterIt(btLinkIt($text)));
+                }
 
-            if (isset($twit["entities"]["media"])) {
-                foreach($twit["entities"]["media"] as $img) {
-                    if ($img["type"] == "photo") {
-                        $linkStr = $img["url"];
-                        $imagStr = $img["media_url_https"];
+                if (isset($twit["entities"]["media"])) {
+                    foreach($twit["entities"]["media"] as $img) {
+                        if ($img["type"] == "photo") {
+                            $linkStr = $img["url"];
+                            $imagStr = $img["media_url_https"];
+                        }
                     }
                 }
-            }
 
-            $html.= "<div class='block-tweet-tweet'>";
-            $html.= "   <div class='block-tweet-tweet-head'>";
-            $html.= "       <div class='block-tweet-twitter-icon'><i class='fa fa-twitter' aria-hidden='true'></i></div>";
-            $html.= "       <div class='block-tweet-tweet-link'><a href='http://twitter.com/${screenName}' aria-label='Follow @${screenName} on Twitter' target='_blank'>@${screenName}</a></div>";
-            $html.= "   </div>";
-            $html.= "   <div class='block-tweet-tweet-body'>";
-            $html.= "       <div class='block-tweet-tweet-date'>${dateStr}</div>";
-            $html.= "       <div class='block-tweet-tweet-text'>${textStr}</div>";
-            $html.= "   </div>";
-            $html.= "</div>";
+                $html.= "<div class='block-tweet-tweet'>";
+                $html.= "   <div class='block-tweet-tweet-head'>";
+                $html.= "       <div class='block-tweet-twitter-icon'><i class='fa fa-twitter' aria-hidden='true'></i></div>";
+                $html.= "       <div class='block-tweet-tweet-link'><a href='http://twitter.com/${screenName}' aria-label='Follow @${screenName} on Twitter' target='_blank'>@${screenName}</a></div>";
+                $html.= "   </div>";
+                $html.= "   <div class='block-tweet-tweet-body'>";
+                $html.= "       <div class='block-tweet-tweet-date'>${dateStr}</div>";
+                $html.= "       <div class='block-tweet-tweet-text'>${textStr}</div>";
+                $html.= "   </div>";
+                $html.= "</div>";
+            }
         
     }
      
