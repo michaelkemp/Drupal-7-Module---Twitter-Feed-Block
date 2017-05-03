@@ -107,6 +107,7 @@ function block_tweets_block_info(){
     $blocks = array();
     
     $SCREEN_NAME = variable_get('block_tweets_SCREEN_NAME', '');
+    $SCREEN_NAME = strtolower(trim(preg_replace('/\s+/', '', $SCREEN_NAME),','));
     $sNames = explode(",",$SCREEN_NAME);
     $cnt = 0;
     foreach($sNames as $sname) {    
@@ -131,6 +132,7 @@ function block_tweets_block_view($block_name = ""){
     $block = array();
     
     $SCREEN_NAME = variable_get('block_tweets_SCREEN_NAME', '');
+    $SCREEN_NAME = strtolower(trim(preg_replace('/\s+/', '', $SCREEN_NAME),','));
     $sNames = explode(",",$SCREEN_NAME);
     $cnt = 0;
     foreach($sNames as $sname) {    
