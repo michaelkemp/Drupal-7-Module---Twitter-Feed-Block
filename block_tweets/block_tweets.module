@@ -114,7 +114,8 @@ function block_tweets_block_info(){
         $sname = strtolower(trim($sname));
         if ($sname != "") {
             ++$cnt;
-            $blocks["twitterBlock_${cnt}_${sname}"] = array(
+            $name = substr("twTile_${cnt}_${sname}",0,30);
+            $blocks[$name] = array(
                 'info' => t("Twitter Block ${cnt} ${sname}"),
                 'cache' => DRUPAL_CACHE_PER_PAGE,
             );
@@ -139,7 +140,7 @@ function block_tweets_block_view($block_name = ""){
         $sname = strtolower(trim($sname));
         if ($sname != "") {
             ++$cnt;
-            $name = "twitterBlock_${cnt}_${sname}";
+            $name = substr("twTile_${cnt}_${sname}",0,30);
             if ($block_name == $name) {
                 $block['subject'] = t("Twitter Block ${cnt} ${sname}");
                 $block['content'] = btTwitterBlock($sname);
