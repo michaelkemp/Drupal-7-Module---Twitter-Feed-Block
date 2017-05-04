@@ -96,7 +96,7 @@ function block_tweets_form($form, &$form_state) {
 
 function block_tweets_form_submit($form, &$form_state) {
     cache_clear_all();
-    drupal_set_message(t('Twitter information Saved.'));
+    variable_set("btTwitterUpdated", 1);
 } 
  
  
@@ -158,8 +158,9 @@ function btTwitterBlock($dispScreenName) {
     $btTwitterTS = variable_get("btTwitterTS", 0);
     $btTwitterJSON = variable_get("btTwitterJSON", "{}");
     $WAIT_TIME = intval(variable_get('block_tweets_WAIT_TIME', '60'));
+    $btTwitterUpdated = intval(variable_get("btTwitterUpdated", 1));
     
-    if (($now - $btTwitterTS) > $WAIT_TIME ) {
+    if ((($now - $btTwitterTS) > $WAIT_TIME) || ($btTwitterUpdated == 1)) {
         
         $CONSUMER_KEY = variable_get('block_tweets_CONSUMER_KEY', '');
         $CONSUMER_SECRET = variable_get('block_tweets_CONSUMER_SECRET', '');
@@ -189,10 +190,12 @@ function btTwitterBlock($dispScreenName) {
             $btTwitterJSON = json_encode($tweetArray);
             variable_set("btTwitterTS", $now);
             variable_set("btTwitterJSON", $btTwitterJSON);
+            variable_set("btTwitterUpdated", 0);
         } else {
             $btTwitterJSON = "{}";
             variable_set("btTwitterTS", 0);
             variable_set("btTwitterJSON", "{}");
+            variable_set("btTwitterUpdated", 1);
         }
     }
     
